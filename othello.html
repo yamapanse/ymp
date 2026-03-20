@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オセロ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a1a2e;
+    color: #eee;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    letter-spacing: 4px;
+    color: #e0e0ff;
+  }
+
+  #mode-select {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .mode-btn {
+    padding: 8px 20px;
+    border: 2px solid #4a4aaa;
+    background: transparent;
+    color: #ccc;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  .mode-btn.active {
+    background: #4a4aaa;
+    color: #fff;
+  }
+
+  .mode-btn:hover { background: #3a3a88; color: #fff; }
+
+  #info {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 14px;
+    align-items: center;
+  }
+
+  .score-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+  }
+
+  .disc-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .disc-icon.black { background: #111; border: 2px solid #555; }
+  .disc-icon.white { background: #f0f0f0; border: 2px solid #aaa; }
+
+  #status {
+    font-size: 1rem;
+    color: #aaf;
+    min-width: 180px;
+    text-align: center;
+  }
+
+  #board-wrap {
+    background: #16213e;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
+    gap: 2px;
+    background: #2a2a2a;
+    border: 2px solid #2a2a2a;
+  }
+
+  .cell {
+    width: 60px;
+    height: 60px;
+    background: #2d7a2d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.1s;
+  }
+
+  .cell:hover { background: #3a9a3a; }
+
+  .cell.hint::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    position: absolute;
+  }
+
+  .disc {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    position: relative;
+    transform-style: preserve-3d;
+  }
+
+  .disc.black {
+    background: radial-gradient(circle at 35% 35%, #555, #111);
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+  }
+
+  .disc.white {
+    background: radial-gradient(circle at 35% 35%, #fff, #ccc);
+    box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+  }
+
+  .disc.flip {
+    animation: flip 0.35s ease;
+  }
+
+  @keyframes flip {
+    0%   { transform: scaleX(1); }
+    50%  { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+  }
+
+  #controls {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .ctrl-btn {
+    padding: 8px 24px;
+    background: #4a4aaa;
+    border: none;
+    color: #fff;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+
+  .ctrl-btn:hover { background: #6666cc; }
+
+  #message-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  #message-overlay.show { display: flex; }
+
+  #message-box {
+    background: #16213e;
+    border: 2px solid #4a4aaa;
+    border-radius: 16px;
+    padding: 40px 60px;
+    text-align: center;
+  }
+
+  #message-box h2 { font-size: 2rem; margin-bottom: 16px; color: #e0e0ff; }
+  #message-box p  { font-size: 1.1rem; margin-bottom: 24px; color: #aaa; }
+</style>
+</head>
+<body>
+
+<h1>OTHELLO</h1>
+
+<div id="mode-select">
+  <button class="mode-btn active" onclick="setMode('pvp')">人間 vs 人間</button>
+  <button class="mode-btn" onclick="setMode('pve-black')">人間(黒) vs AI</button>
+  <button class="mode-btn" onclick="setMode('pve-white')">AI vs 人間(白)</button>
+</div>
+
+<div id="info">
+  <div class="score-box">
+    <span class="disc-icon black"></span>
+    <span id="score-black">2</span>
+  </div>
+  <div id="status">黒の番</div>
+  <div class="score-box">
+    <span class="disc-icon white"></span>
+    <span id="score-white">2</span>
+  </div>
+</div>
+
+<div id="board-wrap">
+  <div id="board"></div>
+</div>
+
+<div id="controls">
+  <button class="ctrl-btn" onclick="restartGame()">最初から</button>
+</div>
+
+<div id="message-overlay">
+  <div id="message-box">
+    <h2 id="msg-title"></h2>
+    <p id="msg-body"></p>
+    <button class="ctrl-btn" onclick="closeMessage()">もう一度</button>
+  </div>
+</div>
+
+<script>
+const EMPTY = 0, BLACK = 1, WHITE = 2;
+const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+
+let board, current, mode, aiThinking;
+
+// ── init ──────────────────────────────────────────────
+function initBoard() {
+  board = Array.from({length: 8}, () => new Array(8).fill(EMPTY));
+  board[3][3] = WHITE; board[3][4] = BLACK;
+  board[4][3] = BLACK; board[4][4] = WHITE;
+  current = BLACK;
+  aiThinking = false;
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['pvp','pve-black','pve-white'][i] === m);
+  });
+  restartGame();
+}
+
+function restartGame() {
+  closeMessage();
+  initBoard();
+  render();
+  if (isAiTurn()) scheduleAI();
+}
+
+// ── logic ─────────────────────────────────────────────
+function opponent(c) { return c === BLACK ? WHITE : BLACK; }
+
+function getFlips(b, r, c, color) {
+  const flips = [];
+  for (const [dr, dc] of DIRS) {
+    const line = [];
+    let nr = r + dr, nc = c + dc;
+    while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && b[nr][nc] === opponent(color)) {
+      line.push([nr, nc]);
+      nr += dr; nc += dc;
+    }
+    if (line.length && nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && b[nr][nc] === color) {
+      flips.push(...line);
+    }
+  }
+  return flips;
+}
+
+function isValid(b, r, c, color) {
+  return b[r][c] === EMPTY && getFlips(b, r, c, color).length > 0;
+}
+
+function validMoves(b, color) {
+  const moves = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (isValid(b, r, c, color)) moves.push([r, c]);
+  return moves;
+}
+
+function applyMove(b, r, c, color) {
+  const nb = b.map(row => [...row]);
+  nb[r][c] = color;
+  for (const [fr, fc] of getFlips(nb, r, c, color)) nb[fr][fc] = color;
+  return nb;
+}
+
+function countScore(b) {
+  let black = 0, white = 0;
+  for (const row of b) for (const v of row) { if (v === BLACK) black++; else if (v === WHITE) white++; }
+  return { black, white };
+}
+
+// ── render ────────────────────────────────────────────
+function render() {
+  const boardEl = document.getElementById('board');
+  const hints = validMoves(board, current);
+  const hintSet = new Set(hints.map(([r,c]) => r*8+c));
+
+  boardEl.innerHTML = '';
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (hintSet.has(r*8+c) ? ' hint' : '');
+      cell.dataset.r = r; cell.dataset.c = c;
+      cell.addEventListener('click', onCellClick);
+
+      if (board[r][c] !== EMPTY) {
+        const disc = document.createElement('div');
+        disc.className = 'disc ' + (board[r][c] === BLACK ? 'black' : 'white');
+        cell.appendChild(disc);
+      }
+      boardEl.appendChild(cell);
+    }
+  }
+
+  const { black, white } = countScore(board);
+  document.getElementById('score-black').textContent = black;
+  document.getElementById('score-white').textContent = white;
+
+  const moves = validMoves(board, current);
+  const colorName = current === BLACK ? '黒' : '白';
+  if (moves.length === 0) {
+    const opp = validMoves(board, opponent(current));
+    if (opp.length === 0) {
+      endGame(black, white);
+    } else {
+      document.getElementById('status').textContent = `${colorName} パス`;
+      setTimeout(() => {
+        current = opponent(current);
+        render();
+        if (isAiTurn()) scheduleAI();
+      }, 800);
+    }
+  } else {
+    const label = isAiTurn() ? `${colorName}（AI）考え中…` : `${colorName} の番`;
+    document.getElementById('status').textContent = label;
+  }
+}
+
+function onCellClick(e) {
+  if (aiThinking || isAiTurn()) return;
+  const r = parseInt(e.currentTarget.dataset.r);
+  const c = parseInt(e.currentTarget.dataset.c);
+  if (!isValid(board, r, c, current)) return;
+
+  const flips = getFlips(board, r, c, current);
+  board = applyMove(board, r, c, current);
+  animateFlips(r, c, flips, () => {
+    current = opponent(current);
+    render();
+    if (isAiTurn()) scheduleAI();
+  });
+}
+
+function animateFlips(r, c, flips, cb) {
+  render();
+  const boardEl = document.getElementById('board');
+  const allFlip = [[r, c], ...flips];
+  allFlip.forEach(([fr, fc]) => {
+    const idx = fr * 8 + fc;
+    const disc = boardEl.children[idx].querySelector('.disc');
+    if (disc) { disc.classList.add('flip'); }
+  });
+  setTimeout(cb, 380);
+}
+
+// ── AI (minimax α-β, depth 5) ─────────────────────────
+function isAiTurn() {
+  if (mode === 'pve-black' && current === WHITE) return true;
+  if (mode === 'pve-white' && current === BLACK) return true;
+  return false;
+}
+
+function scheduleAI() {
+  aiThinking = true;
+  setTimeout(() => {
+    const move = getBestMove(board, current, 5);
+    if (move) {
+      const [r, c] = move;
+      const flips = getFlips(board, r, c, current);
+      board = applyMove(board, r, c, current);
+      animateFlips(r, c, flips, () => {
+        aiThinking = false;
+        current = opponent(current);
+        render();
+      });
+    } else {
+      aiThinking = false;
+    }
+  }, 300);
+}
+
+// 重み盤面
+const WEIGHTS = [
+  [100,-20, 10,  5,  5, 10,-20,100],
+  [-20,-40, -5, -5, -5, -5,-40,-20],
+  [ 10, -5,  3,  3,  3,  3, -5, 10],
+  [  5, -5,  3,  1,  1,  3, -5,  5],
+  [  5, -5,  3,  1,  1,  3, -5,  5],
+  [ 10, -5,  3,  3,  3,  3, -5, 10],
+  [-20,-40, -5, -5, -5, -5,-40,-20],
+  [100,-20, 10,  5,  5, 10,-20,100],
+];
+
+function evaluate(b, color) {
+  let score = 0;
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      if (b[r][c] === color) score += WEIGHTS[r][c];
+      else if (b[r][c] === opponent(color)) score -= WEIGHTS[r][c];
+    }
+  score += (validMoves(b, color).length - validMoves(b, opponent(color)).length) * 5;
+  return score;
+}
+
+function minimax(b, depth, alpha, beta, maximizing, aiColor) {
+  const col = maximizing ? aiColor : opponent(aiColor);
+  const moves = validMoves(b, col);
+
+  if (depth === 0 || (moves.length === 0 && validMoves(b, opponent(col)).length === 0)) {
+    return evaluate(b, aiColor);
+  }
+
+  if (moves.length === 0) {
+    return minimax(b, depth - 1, alpha, beta, !maximizing, aiColor);
+  }
+
+  if (maximizing) {
+    let best = -Infinity;
+    for (const [r, c] of moves) {
+      const val = minimax(applyMove(b, r, c, col), depth - 1, alpha, beta, false, aiColor);
+      best = Math.max(best, val);
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const [r, c] of moves) {
+      const val = minimax(applyMove(b, r, c, col), depth - 1, alpha, beta, true, aiColor);
+      best = Math.min(best, val);
+      beta = Math.min(beta, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
+function getBestMove(b, color, depth) {
+  const moves = validMoves(b, color);
+  if (!moves.length) return null;
+  let best = -Infinity, bestMove = null;
+  for (const [r, c] of moves) {
+    const val = minimax(applyMove(b, r, c, color), depth - 1, -Infinity, Infinity, false, color);
+    if (val > best) { best = val; bestMove = [r, c]; }
+  }
+  return bestMove;
+}
+
+// ── end ───────────────────────────────────────────────
+function endGame(black, white) {
+  let title, body;
+  if (black > white) {
+    title = '黒の勝ち！';
+    body = `黒 ${black} — 白 ${white}`;
+  } else if (white > black) {
+    title = '白の勝ち！';
+    body = `白 ${white} — 黒 ${black}`;
+  } else {
+    title = '引き分け！';
+    body = `黒 ${black} — 白 ${white}`;
+  }
+  document.getElementById('status').textContent = 'ゲーム終了';
+  setTimeout(() => {
+    document.getElementById('msg-title').textContent = title;
+    document.getElementById('msg-body').textContent = body;
+    document.getElementById('message-overlay').classList.add('show');
+  }, 500);
+}
+
+function closeMessage() {
+  document.getElementById('message-overlay').classList.remove('show');
+}
+
+// ── start ─────────────────────────────────────────────
+mode = 'pvp';
+initBoard();
+render();
+</script>
+</body>
+</html>
