@@ -19,7 +19,8 @@ module.exports = withPWA({
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
-  disable: process.env.NODE_ENV === 'development',
+  // Vercel Edge runtime と非互換のため本番でも一時的に無効化
+  disable: true,
   workboxOptions: {
     disableDevLogs: true,
   },

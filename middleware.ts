@@ -42,25 +42,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ログイン済みで /login にアクセスした場合は role別ページへ
+  // ログイン済みで /login にアクセスした場合はルートへ（role判定はapp/page.tsxで行う）
   if (user && pathname === '/login') {
-    const supabase2 = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return request.cookies.getAll(); },
-          setAll() {},
-        },
-      }
-    );
-    const { data: profile } = await supabase2
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
     const url = request.nextUrl.clone();
-    url.pathname = profile?.role === 'parent' ? '/parent' : '/child/today';
+    url.pathname = '/';
     return NextResponse.redirect(url);
   }
 

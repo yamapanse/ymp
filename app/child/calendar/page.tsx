@@ -176,12 +176,14 @@ export default function CalendarPage() {
           return (
             <button
               key={dateStr}
-              onClick={() => hasRecord && openDay(dateStr)}
-              className={cn(
-                'flex flex-col items-center py-2 rounded-xl',
-                hasRecord && 'active:bg-secondary cursor-pointer',
-                !hasRecord && 'cursor-default'
-              )}
+              onClick={() => {
+                if (hasRecord) {
+                  openDay(dateStr);
+                } else {
+                  router.push(`/child/today?date=${dateStr}`);
+                }
+              }}
+              className="flex flex-col items-center py-2 rounded-xl active:bg-secondary"
             >
               <span
                 className={cn(
