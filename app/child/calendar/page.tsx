@@ -74,7 +74,7 @@ export default function CalendarPage() {
         .maybeSingle(),
     ]);
 
-    const dots = new Set((records ?? []).map((r) => r.date));
+    const dots = new Set((records ?? []).map((r: any) => r.date));
     setDotDates(dots);
 
     const choreTotal = (records ?? []).reduce(
