@@ -1,0 +1,14 @@
+# 依存ライブラリ（これが一番重い原因です）
+node_modules/
+
+# ビルド成果物
+.next/
+out/
+build/
+
+# 環境変数（個人情報やパスワードが含まれるため公開禁止）
+.env*.local
+
+# OS固有のキャッシュファイル
+.DS_Store
+Thumbs.db

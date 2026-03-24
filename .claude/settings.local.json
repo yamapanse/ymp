@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Read(//usr/local/**)",
+      "Read(//c/Users/tksya/.nvm/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/tksya/AppData/Roaming/**)",
+      "Read(//c/Users/tksya/AppData/Local/**)",
+      "Read(//c//**)",
+      "Read(//c/Users/tksya/**)",
+      "Bash(cmd /c \"where npm\")",
+      "Bash(cmd /c \"where node\")",
+      "Bash(cmd /c \"node --version && npm --version\")",
+      "Bash(cmd /c \"dir C:\\\\Program Files\\\\nodejs\\\\npm.cmd\")",
+      "Bash(cmd /c \"dir C:\\\\Users\\\\tksya\\\\AppData\\\\Roaming\\\\npm\\\\npm.cmd\")"
+    ]
+  }
+}
