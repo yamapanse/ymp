@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { formatInTimeZone } from 'date-fns-tz';
+import { addDays, subDays, parseISO } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { saveChoreRecords } from './actions';
@@ -116,14 +118,29 @@ export default function TodayPage() {
     <div className="px-4 py-5">
       <h1 className="mb-4 text-lg font-bold">今日のお手伝い</h1>
 
-      {/* 日付ピッカー */}
-      <input
-        type="date"
-        value={date}
-        max={todayJST()}
-        onChange={(e) => setDate(e.target.value)}
-        className="mb-5 w-full rounded-xl border border-input bg-background px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-ring"
-      />
+      {/* 日付ピッカー + 前日・翌日ボタン */}
+      <div className="mb-5 flex items-center gap-2">
+        <button
+          onClick={() => setDate(formatInTimeZone(subDays(parseISO(date), 1), TZ, 'yyyy-MM-dd'))}
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-border active:bg-secondary"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <input
+          type="date"
+          value={date}
+          max={todayJST()}
+          onChange={(e) => setDate(e.target.value)}
+          className="flex-1 rounded-xl border border-input bg-background px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <button
+          onClick={() => setDate(formatInTimeZone(addDays(parseISO(date), 1), TZ, 'yyyy-MM-dd'))}
+          disabled={date >= todayJST()}
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-border active:bg-secondary disabled:opacity-30"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
 
       {/* お手伝いリスト */}
       {loading ? (
