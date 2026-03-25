@@ -1,65 +1,40 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/login'];
-
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // セッションリフレッシュ（必須: getUser() を必ず呼ぶこと）
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+/**
+ * Supabase @supabase/ssr は Edge runtime で __dirname を参照するため、
+ * middleware では使用しない。
+ * セッションクッキーの存在確認のみ行い、JWT検証は Server Component に委ねる。
+ */
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const PUBLIC_PATHS = ['/login', '/auth'];
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
-  // 未ログインの場合は /login へリダイレクト
-  if (!user && !isPublic) {
+  // Supabase セッションクッキーの存在確認（sb-{ref}-auth-token*）
+  const hasSession = request.cookies.getAll().some(
+    (c) => c.name.startsWith('sb-') && c.name.includes('auth-token')
+  );
+
+  // 未ログイン → /login へ
+  if (!hasSession && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // ログイン済みで /login にアクセスした場合はルートへ（role判定はapp/page.tsxで行う）
-  if (user && pathname === '/login') {
+  // ログイン済み + /login → / へ（role判定は app/page.tsx で行う）
+  if (hasSession && pathname === '/login') {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * 以下を除くすべてのパスに適用:
-     * - _next/static (静的ファイル)
-     * - _next/image (画像最適化)
-     * - favicon.ico / manifest / icons / sw など PWA ファイル
-     */
     '/((?!_next/static|_next/image|favicon.ico|manifest.json|icons|sw.js|workbox-.*).*)',
   ],
 };
