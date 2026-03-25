@@ -121,11 +121,11 @@ export default function ChildrenPage() {
       {/* 編集モーダル */}
       {editTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
           onClick={() => setEditTarget(null)}
         >
           <div
-            className="w-full max-w-app rounded-2xl bg-background p-5 shadow-xl"
+            className="w-full max-w-app rounded-2xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="mb-4 font-bold">プロフィール編集</h2>
@@ -176,11 +176,11 @@ export default function ChildrenPage() {
       {/* 新規作成モーダル */}
       {showCreate && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
           onClick={() => setShowCreate(false)}
         >
           <div
-            className="w-full max-w-app rounded-2xl bg-background p-5 shadow-xl"
+            className="w-full max-w-app rounded-2xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="mb-4 font-bold">子供アカウント作成</h2>

@@ -190,11 +190,11 @@ export default function MastersPage() {
       {/* 単価改定モーダル */}
       {reviseTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
           onClick={() => setReviseTarget(null)}
         >
           <div
-            className="w-full max-w-app rounded-2xl bg-background p-5 shadow-xl"
+            className="w-full max-w-app rounded-2xl bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="mb-1 font-bold">単価改定</h2>

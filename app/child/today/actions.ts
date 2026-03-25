@@ -23,6 +23,16 @@ export async function saveChoreRecords({
   } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
+  // 支給済み月はロック
+  const yearMonth = date.slice(0, 7);
+  const { data: summary } = await supabase
+    .from('monthly_summaries')
+    .select('paid_at')
+    .eq('child_id', user.id)
+    .eq('year_month', yearMonth)
+    .maybeSingle();
+  if (summary?.paid_at) return { error: 'この月はすでに支給済みのため変更できません' };
+
   // チェック済みをupsert
   if (checked.length > 0) {
     const records = checked.map((r) => ({

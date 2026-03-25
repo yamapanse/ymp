@@ -26,6 +26,7 @@ export default function TodayPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
+  const [isPaid, setIsPaid] = useState(false);
 
   const fetchData = useCallback(async (selectedDate: string) => {
     setLoading(true);
@@ -35,7 +36,8 @@ export default function TodayPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [{ data: masters }, { data: records }] = await Promise.all([
+    const yearMonth = selectedDate.slice(0, 7);
+    const [{ data: masters }, { data: records }, { data: summary }] = await Promise.all([
       supabase
         .from('chore_masters')
         .select('id, name, unit_price')
@@ -49,7 +51,14 @@ export default function TodayPage() {
         .select('chore_master_id, count')
         .eq('child_id', user.id)
         .eq('date', selectedDate),
+      supabase
+        .from('monthly_summaries')
+        .select('paid_at')
+        .eq('child_id', user.id)
+        .eq('year_month', yearMonth)
+        .maybeSingle(),
     ]);
+    setIsPaid(!!summary?.paid_at);
 
     const recordMap = Object.fromEntries(
       (records ?? []).map((r) => [r.chore_master_id, r.count])
@@ -226,14 +235,23 @@ export default function TodayPage() {
             </div>
           )}
 
+          {/* 支給済みバッジ */}
+          {isPaid && (
+            <div className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-center text-sm font-medium text-green-700">
+              この月は支給済みのため編集できません
+            </div>
+          )}
+
           {/* 保存ボタン */}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="mt-4 w-full rounded-2xl bg-primary py-4 text-base font-bold text-primary-foreground shadow active:opacity-80 disabled:opacity-50"
-          >
-            {saving ? '保存中…' : '保存する'}
-          </button>
+          {!isPaid && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="mt-4 w-full rounded-2xl bg-primary py-4 text-base font-bold text-primary-foreground shadow active:opacity-80 disabled:opacity-50"
+            >
+              {saving ? '保存中…' : '保存する'}
+            </button>
+          )}
 
           {savedMsg && (
             <p className="mt-3 text-center text-sm font-medium text-primary">{savedMsg}</p>

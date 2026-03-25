@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 
 const tabs = [
   { href: '/parent/dashboard', label: 'ダッシュボード' },
@@ -13,11 +15,25 @@ const tabs = [
 
 export default function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background">
-      <div className="px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3">
         <p className="text-xs font-semibold text-muted-foreground">おこづかい帳（親）</p>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-1 text-xs text-muted-foreground active:text-foreground"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          ログアウト
+        </button>
       </div>
       <nav className="flex overflow-x-auto border-t border-border">
         {tabs.map(({ href, label }) => {
