@@ -103,14 +103,27 @@ export default function CalendarPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
+    const { data: rawRecords } = (await supabase
       .from('chore_records')
-      .select('count, unit_price_snapshot, chore_masters(name)')
+      .select('chore_master_id, count, unit_price_snapshot')
       .eq('child_id', user.id)
-      .eq('date', dateStr);
+      .eq('date', dateStr)) as {
+      data: { chore_master_id: string; count: number; unit_price_snapshot: number }[] | null;
+    };
 
-    const records: DayRecord[] = (data ?? []).map((r) => ({
-      name: (r.chore_masters as { name: string } | null)?.name ?? '不明',
+    // is_active に関わらずIDで直接取得（履歴表示のため）
+    const masterIds = Array.from(new Set((rawRecords ?? []).map((r) => r.chore_master_id)));
+    const { data: masters } = masterIds.length
+      ? await supabase
+          .from('chore_masters')
+          .select('id, name')
+          .in('id', masterIds)
+      : { data: [] as { id: string; name: string }[] };
+
+    const masterNameMap = new Map((masters ?? []).map((m) => [m.id, m.name]));
+
+    const records: DayRecord[] = (rawRecords ?? []).map((r) => ({
+      name: masterNameMap.get(r.chore_master_id) ?? '不明',
       count: r.count,
       unit_price_snapshot: r.unit_price_snapshot,
     }));

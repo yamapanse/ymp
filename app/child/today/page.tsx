@@ -36,7 +36,10 @@ export default function TodayPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
+    const isToday = selectedDate === todayJST();
     const yearMonth = selectedDate.slice(0, 7);
+
+    // 常に is_active=true のみ取得（今日・未来・過去すべて共通）
     const [{ data: masters }, { data: records }, { data: summary }] = await Promise.all([
       supabase
         .from('chore_masters')
@@ -60,17 +63,37 @@ export default function TodayPage() {
     ]);
     setIsPaid(!!summary?.paid_at);
 
+    const masterMap = new Map((masters ?? []).map((m) => [m.id, m]));
+
+    // 今日以外: レコードがある非アクティブなお手伝いのみ追加表示
+    if (!isToday && records?.length) {
+      const missingIds = records
+        .map((r) => r.chore_master_id)
+        .filter((id) => !masterMap.has(id));
+      if (missingIds.length > 0) {
+        const { data: extraMasters } = await supabase
+          .from('chore_masters')
+          .select('id, name, unit_price')
+          .in('id', missingIds);
+        (extraMasters ?? []).forEach((m) => masterMap.set(m.id, m));
+      }
+    }
+
+    const allMasters = Array.from(masterMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, 'ja')
+    );
+
     const recordMap = Object.fromEntries(
       (records ?? []).map((r) => [r.chore_master_id, r.count])
     );
 
     const newStates: Record<string, ChoreState> = {};
-    (masters ?? []).forEach((m) => {
+    allMasters.forEach((m) => {
       const existing = recordMap[m.id];
       newStates[m.id] = { checked: existing !== undefined, count: existing ?? 1 };
     });
 
-    setChores(masters ?? []);
+    setChores(allMasters);
     setStates(newStates);
     setLoading(false);
   }, []);
