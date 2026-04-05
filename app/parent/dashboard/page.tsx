@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { endOfMonth, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { createClient } from '@/lib/supabase/client';
 import { markAsPaid } from './actions';
@@ -44,7 +45,7 @@ export default function DashboardPage() {
             .select('count, unit_price_snapshot')
             .eq('child_id', p.id)
             .gte('date', `${ym}-01`)
-            .lte('date', `${ym}-31`),
+            .lte('date', formatInTimeZone(endOfMonth(parseISO(`${ym}-01`)), TZ, 'yyyy-MM-dd')),
           supabase
             .from('monthly_summaries')
             .select('paid_at')

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { endOfMonth, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { createClient } from '@/lib/supabase/client';
 
@@ -48,7 +49,7 @@ export default function RecordsPage() {
         .select('id, date, count, unit_price_snapshot, chore_masters(name)')
         .eq('child_id', selectedChild)
         .gte('date', `${yearMonth}-01`)
-        .lte('date', `${yearMonth}-31`)
+        .lte('date', formatInTimeZone(endOfMonth(parseISO(`${yearMonth}-01`)), TZ, 'yyyy-MM-dd'))
         .order('date');
       setRecords((data as Record[]) ?? []);
       setLoading(false);
