@@ -48,24 +48,25 @@ export default function DashboardPage() {
             .lte('date', formatInTimeZone(endOfMonth(parseISO(`${ym}-01`)), TZ, 'yyyy-MM-dd')),
           supabase
             .from('monthly_summaries')
-            .select('paid_at')
+            .select('paid_at, base_allowance, chore_total, total_amount')
             .eq('child_id', p.id)
             .eq('year_month', ym)
             .maybeSingle(),
         ]);
 
-        const choreTotal = (records ?? []).reduce(
+        const computedChoreTotal = (records ?? []).reduce(
           (s, r) => s + r.count * r.unit_price_snapshot,
           0
         );
-        const base = p.base_allowance ?? 0;
+        const base = summary?.base_allowance ?? p.base_allowance ?? 0;
+        const choreTotal = summary?.chore_total ?? computedChoreTotal;
 
         return {
           id: p.id,
           name: p.name,
           base,
           choreTotal,
-          total: base + choreTotal,
+          total: summary?.total_amount ?? base + choreTotal,
           paidAt: summary?.paid_at ?? null,
         };
       })

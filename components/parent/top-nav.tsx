@@ -29,7 +29,7 @@ export default function TopNav() {
         <p className="text-xs font-semibold text-muted-foreground">おこづかい帳（親）</p>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-1 text-xs text-muted-foreground active:text-foreground"
+          className="flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:text-foreground"
         >
           <LogOut className="h-3.5 w-3.5" />
           ログアウト
@@ -43,10 +43,10 @@ export default function TopNav() {
               key={href}
               href={href}
               className={cn(
-                'flex-shrink-0 px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                'flex-shrink-0 rounded-t-lg border-b-2 px-4 py-2 text-sm font-medium transition-colors',
                 active
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground'
+                  ? 'border-primary bg-card text-primary'
+                  : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {label}

@@ -1,6 +1,10 @@
 'use server';
 
+import { endOfMonth, parseISO } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { createClient } from '@/lib/supabase/server';
+
+const TZ = 'Asia/Tokyo';
 
 export async function markAsPaid(childId: string, yearMonth: string) {
   const supabase = createClient();
@@ -11,20 +15,30 @@ export async function markAsPaid(childId: string, yearMonth: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
-  const { data: me } = await supabase
+  const { data: me, error: meError } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
+  if (meError) return { error: meError.message };
   if (me?.role !== 'parent') return { error: 'Forbidden' };
 
   // 当月のchore_records合計を計算
-  const { data: records } = await supabase
+  const monthEnd = formatInTimeZone(
+    endOfMonth(parseISO(`${yearMonth}-01`)),
+    TZ,
+    'yyyy-MM-dd'
+  );
+  const { data: records, error: recordsError } = await supabase
     .from('chore_records')
     .select('count, unit_price_snapshot')
     .eq('child_id', childId)
     .gte('date', `${yearMonth}-01`)
-    .lte('date', `${yearMonth}-31`);
+    .lte('date', monthEnd);
+
+  if (recordsError) {
+    return { error: recordsError.message };
+  }
 
   const choreTotal = (records ?? []).reduce(
     (s, r) => s + r.count * r.unit_price_snapshot,
@@ -32,11 +46,15 @@ export async function markAsPaid(childId: string, yearMonth: string) {
   );
 
   // base_allowance取得
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('base_allowance')
     .eq('id', childId)
     .single();
+
+  if (profileError) {
+    return { error: profileError.message };
+  }
 
   const base = profile?.base_allowance ?? 0;
 

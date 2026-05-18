@@ -77,9 +77,6 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
-  * {
-    @apply border-border;
-  }
   body {
     @apply bg-background text-foreground;
   }
@@ -89,13 +86,24 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
+  *, *::before, *::after {
+    @apply box-border;
   }
   body {
-    @apply bg-background text-foreground;
-    /* スマホ用: タップ時のハイライト無効化 */
+    @apply min-h-screen bg-background text-foreground antialiased;
+    margin: 0;
+    padding: 0;
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+  }
+  a {
+    @apply no-underline;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    @apply font-sans;
   }
 }
 

@@ -31,14 +31,24 @@ export default function MastersPage() {
   useEffect(() => {
     (async () => {
       const supabase = createClient();
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .eq('role', 'child')
-        .order('name');
-      const list = data ?? [];
-      setChildren(list);
-      if (list.length > 0) setSelectedChild(list[0].id);
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .eq('role', 'child')
+          .order('name');
+        const list = data ?? [];
+        setChildren(list);
+        if (list.length > 0) setSelectedChild(list[0].id);
+        // 子がいない場合や後続 fetch が呼ばれない場合に読み込み中で止まらないようにする
+        setLoading(false);
+      } catch (err) {
+        // 取得失敗でも UI が loading のまま止まらないようにする
+        // ログはブラウザコンソールで確認できる
+        // eslint-disable-next-line no-console
+        console.error('[masters] failed to fetch children', err);
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -46,15 +56,22 @@ export default function MastersPage() {
     if (!childId) return;
     setLoading(true);
     const supabase = createClient();
-    const { data } = await supabase
-      .from('chore_masters')
-      .select('id, name, unit_price, valid_from')
-      .eq('child_id', childId)
-      .eq('is_active', true)
-      .is('valid_to', null)
-      .order('name');
-    setMasters(data ?? []);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from('chore_masters')
+        .select('id, name, unit_price, valid_from')
+        .eq('child_id', childId)
+        .eq('is_active', true)
+        .is('valid_to', null)
+        .order('name');
+      setMasters(data ?? []);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[masters] failed to fetch masters for', childId, err);
+      setMasters([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
